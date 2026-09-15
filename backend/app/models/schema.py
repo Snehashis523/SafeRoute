@@ -1,0 +1,137 @@
+from sqlalchemy import Column, Integer, String, Float, Boolean, JSON, DateTime, ForeignKey, Enum, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY
+from geoalchemy2 import Geometry
+from app.models.database import Base
+from datetime import datetime
+import enum
+
+class EscalationLevel(enum.Enum):
+    L0 = "L0_Normal"
+    L1 = "L1_Watch"
+    L2 = "L2_Checkin"
+    L3 = "L3_Alert"
+    L4 = "L4_Sustained"
+
+class User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    phone = Column(String, unique=True, index=True)
+    name = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class TrustedContact(Base):
+    __tablename__ = "trusted_contacts"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"))
+    name = Column(String)
+    phone = Column(String)
+    tier = Column(String) # 'primary' or 'secondary'
+    priority = Column(Integer)
+
+class Trip(Base):
+    __tablename__ = "trips"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"))
+    origin_geom = Column(Geometry('POINT', srid=4326))
+    dest_geom = Column(Geometry('POINT', srid=4326))
+    mode = Column(String)
+    planned_route_geom = Column(Geometry('LINESTRING', srid=4326))
+    planned_segments = Column(JSONB)
+    started_at = Column(DateTime)
+    eta = Column(DateTime)
+    status = Column(String) # 'active', 'completed', 'cancelled'
+
+class GpsPing(Base):
+    __tablename__ = "gps_pings"
+    trip_id = Column(String, primary_key=True) 
+    ts = Column(DateTime, primary_key=True)
+    geom = Column(Geometry('POINT', srid=4326))
+    speed = Column(Float)
+    accuracy = Column(Float)
+
+class RiskCell(Base):
+    __tablename__ = "risk_cells"
+    h3_index = Column(String, primary_key=True)
+    hour = Column(Integer, primary_key=True)
+    dow = Column(Integer, primary_key=True)
+    risk_score = Column(Float)
+    confidence = Column(String) # 'high', 'estimated'
+    sample_count = Column(Integer)
+
+class StaticFeature(Base):
+    __tablename__ = "static_features"
+    h3_index = Column(String, primary_key=True)
+    lit_ratio = Column(Float)
+    police_dist_m = Column(Float)
+    shop_density = Column(Float)
+    road_class = Column(String)
+    transit_dist_m = Column(Float)
+
+class Report(Base):
+    __tablename__ = "reports"
+    id = Column(String, primary_key=True)
+    trip_id = Column(String)
+    h3_index = Column(String)
+    rating = Column(String)
+    tags = Column(ARRAY(String))
+    note = Column(String)
+    ts = Column(DateTime, default=datetime.utcnow)
+
+class Incident(Base):
+    __tablename__ = "incidents"
+    id = Column(String, primary_key=True)
+    type = Column(String)
+    geom = Column(Geometry('POINT', srid=4326))
+    ts = Column(DateTime)
+    source = Column(String)
+    trust_weight = Column(Float)
+
+class SafePoint(Base):
+    __tablename__ = "safe_points"
+    id = Column(String, primary_key=True)
+    geom = Column(Geometry('POINT', srid=4326))
+    type = Column(String)
+    opening_hours = Column(String)
+
+class Alert(Base):
+    __tablename__ = "alerts"
+    id = Column(String, primary_key=True)
+    trip_id = Column(String)
+    level = Column(String)
+    type = Column(String)
+    triggered_at = Column(DateTime)
+    resolved_at = Column(DateTime, nullable=True)
+    payload = Column(JSONB)
+
+class AlertCooldown(Base):
+    __tablename__ = "alert_cooldowns"
+    trip_id = Column(String, primary_key=True)
+    alert_type = Column(String, primary_key=True)
+    cooldown_until = Column(DateTime)
+    __table_args__ = (UniqueConstraint('trip_id', 'alert_type'),)
+
+class EscalationState(Base):
+    __tablename__ = "escalation_state"
+    trip_id = Column(String, primary_key=True)
+    level = Column(String)
+    entered_at = Column(DateTime)
+    reason = Column(String)
+    checkin_deadline = Column(DateTime, nullable=True)
+    last_notified_at = Column(DateTime, nullable=True)
+
+class VoiceEvent(Base):
+    __tablename__ = "voice_events"
+    id = Column(String, primary_key=True)
+    trip_id = Column(String)
+    kind = Column(String) # 'duress_word' | 'safe_word' | 'checkin_spoken' | 'no_response'
+    transcript_hash = Column(String)
+    confidence = Column(Float)
+    ts = Column(DateTime, default=datetime.utcnow)
+
+class VoiceConfig(Base):
+    __tablename__ = "voice_config"
+    user_id = Column(String, primary_key=True)
+    safe_word_hash = Column(String)
+    duress_word_hash = Column(String)
+    enabled = Column(Boolean, default=True)
+
