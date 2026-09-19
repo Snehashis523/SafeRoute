@@ -5,7 +5,8 @@ from app.models.schema import Trip, EscalationLevel
 from app.schemas.core import TripStartRequest
 from app.deps import get_current_user
 import uuid
-from datetime import datetime
+import secrets
+from datetime import datetime, timezone
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point, LineString
 
@@ -25,8 +26,9 @@ async def start_trip(req: TripStartRequest, db: Session = Depends(get_db), user_
         dest_geom=from_shape(dest_pt, srid=4326),
         mode=req.mode,
         planned_segments=req.planned_segments,
-        started_at=datetime.utcnow(),
-        status="active"
+        started_at=datetime.now(timezone.utc),
+        status="active",
+        share_token=secrets.token_urlsafe(24)
     )
     
     db.add(trip)
@@ -36,7 +38,7 @@ async def start_trip(req: TripStartRequest, db: Session = Depends(get_db), user_
     from app.state import trip_runtimes
     trip_runtimes[trip_id] = {
         "status": "active",
-        "started_at": datetime.utcnow()
+        "started_at": datetime.now(timezone.utc)
     }
     
     # Return WebSocket token (for simplicity using trip_id as token here)

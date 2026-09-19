@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     
     # Schedule workers
     scheduler.add_job(run_aggregator, 'interval', minutes=60)
-    scheduler.add_job(check_active_trips, 'interval', seconds=10)
+    scheduler.add_job(check_active_trips, 'interval', seconds=1)
     
     scheduler.start()
     yield

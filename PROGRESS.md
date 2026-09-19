@@ -1,30 +1,53 @@
 # SafeRoute+ Progress Summary
 
-*Last Updated: 2026-09-15*
+*Last Updated: 2026-09-19*
 
 ## Completed Milestones
 
-### 1. Infrastructure & Database setup
-- Configured PostgreSQL + PostGIS.
+### 1. Phase A: Infrastructure & Backend Core
+- Configured PostgreSQL + PostGIS with environment variable management.
 - Defined SQLAlchemy Object Relational Models (`schema.py`).
-- Initialized all application tables in the local database instance via `init_db.py`.
-- Replaced Docker/Redis requirements with in-process memory state (`state.py`).
-
-### 2. Backend Services (FastAPI)
-- Scaffolded routing API and time-shift route scorers using Public OSRM API (`routes_plan.py`, `route_scorer.py`).
-- Built Anomaly Detectors for deviations and prolonged stops (`deviation.py`, `stop_detector.py`).
-- Implemented Tiered Escalation state machine (`escalation.py`) mapping states L0 through L4.
+- Implemented Tiered Escalation state machine (`escalation.py`) for states L0 through L4.
+- Built Anomaly Detectors for deviations (>50m) and prolonged stops (`deviation.py`, `stop_detector.py`).
 - Handled SOS WebSockets (`ws_stream.py`) and Voice Verification hashes (`voice.py`).
-- Wired Background Workers (`aggregator.py`, `monitor.py`) to `APScheduler`.
+- Wired Background Workers (`monitor.py`) to handle overdue check-in deadlines and sustained escalations independently of active connections.
+- Handled deduplication of repeating alert triggers while still logging state tier changes.
+- Added 13 Pytests for the escalation engine rules, duplication, check-in deadlines, and duress-word fallback logic.
+- Generated distinct share links via `share_token` (urlsafe).
 
-### 3. Frontend Scaffolding
-- **Web Dashboard**: Created Vite + React app in `dashboard/`, featuring `DashboardPage.tsx` and `LiveSharePage.tsx` (using `react-leaflet`).
-- **Mobile App**: Initialized React Native + Expo app in `mobile/`. Built routing and layout for `Plan`, `RouteCompare`, `ActiveTrip`, and `SOS` screens. Added WebSocket ingestion and reconnect capabilities.
+## What is Left to Do (Phase B & Beyond)
 
-## What is Left to Do
+### Phase B0: Leftovers
+- Completed share token logic.
 
-1. **Frontend Integration**: Wire up the UI components to correctly consume the live backend endpoints (e.g., parsing the route scoring results into Map markers).
-2. **Dashboard Logic**: Render the active trips list dynamically by polling the backend or using WebSockets.
-3. **ML Pipelines**: Flesh out the stubbed ML features (`build_static_features.py`, `build_risk_table.py`) to actually process OSM data into Risk Cells.
-4. **Post-Trip Reporting**: Build Phase 9 feedback loops to dynamically adjust H3 risk scores based on user feedback.
+### Phase B1: Risk Data Pipeline
+- Download OSM extract (Geofabrik West Bengal or Kolkata clip).
+- `build_static_features.py`: Turn OSM tags (lit, shops, police, transit) into per-H3 res-9 cell features.
+- `build_risk_table.py`: Turn features + time-of-day into `risk_cells`. (Note: This is a proxy built from OSM features, not real crime data. High confidence is given to confirmed cells, estimated for neighbor-filled cells).
+- Ensure queries return scores with a confidence flag that differ by time bucket.
 
+### Phase B2: Routing and POST /routes/plan
+- Precompute OSRM geometry for 5-8 demo origin/destination pairs into a `route_cache` table.
+- Update `osrm_client.py` to use config switches (cache, local, public).
+- Score cached geometry dynamically using `route_scorer.py` and `time_shift.py`.
+- Return 2-3 routes with per-segment scores, overall scores, confidence, and factors.
+
+### Phase B3: Endpoints (Frontend API)
+- Auth: register and login (JWT).
+- Trips: start, end, list.
+- `GET /trips/{id}/escalation` (for reconnect resync).
+- `GET /share/{token}` (public, expires when the trip ends).
+- Trusted contacts CRUD (primary/secondary).
+- `POST /users/voice-config` (stores hashes and salt).
+- `POST /trips/{id}/voice-event`, `POST /trips/{id}/checkin`, `POST /trips/{id}/sos`.
+- `POST /trips/{id}/report` (Post-trip rating).
+
+### Phase B4: Feedback Loop
+- `POST /trips/{id}/report` accepts ratings.
+- `aggregator.py` scheduled to adjust H3 cells with damping based on user reports.
+
+### Phase B5: Real Notifications
+- Swap mock Twilio/FCM logs for real SDK calls (with mock as a fallback).
+
+### Phase B6: Tests & Acceptance
+- Full integration manual testing and pytests for routing scoring.

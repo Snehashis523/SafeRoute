@@ -6,7 +6,7 @@ from app.schemas.core import VoiceEventRequest, VoiceConfigRequest
 from app.models.schema import VoiceConfig, VoiceEvent, EscalationLevel
 from app.core.voice import handle_voice_event
 from app.core.escalation import transition_escalation
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter(tags=["Voice"])
 
@@ -47,7 +47,7 @@ async def submit_voice_event(trip_id: str, req: VoiceEventRequest, db: Session =
         kind=req.kind,
         transcript_hash=req.phrase_hash,
         confidence=req.confidence,
-        ts=datetime.utcnow()
+        ts=datetime.now(timezone.utc)
     )
     db.add(evt)
     db.commit()

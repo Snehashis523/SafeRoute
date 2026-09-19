@@ -7,29 +7,26 @@ def calculate_distance(point: Point, line: LineString) -> float:
     # Using roughly 1 deg = 111km for quick approximation.
     return point.distance(line) * 111000
 
-def check_deviation(ping, planned_route_geom, deviation_state) -> bool:
+def check_deviation(ping_dict, planned_route_geom, deviation_state) -> tuple[bool, bool]:
     """
-    Checks if a ping deviates from the route.
-    Mitigations:
-    1. Accuracy gating: accuracy > 50m discarded
-    2. Hysteresis: requires N consecutive deviating pings
-    3. (Assumes ping geom is already map-matched via OSRM)
+    Returns (is_unconfirmed_anomaly, is_confirmed_anomaly)
     """
-    if ping.accuracy and ping.accuracy > 50.0:
-        return False
+    accuracy = ping_dict.get('accuracy', 0)
+    if accuracy > 50.0:
+        return False, deviation_state.get('consecutive', 0) >= 3
         
-    point = to_shape(ping.geom)
+    point = Point(ping_dict['lon'], ping_dict['lat'])
     line = to_shape(planned_route_geom)
     
     distance = calculate_distance(point, line)
-    is_deviating = distance > 100.0 # 100 meters threshold
+    is_deviating = distance > 100.0
+
     
-    # Hysteresis state update
     if is_deviating:
         deviation_state['consecutive'] = deviation_state.get('consecutive', 0) + 1
     else:
         deviation_state['consecutive'] = max(0, deviation_state.get('consecutive', 0) - 1)
         
-    # Return true if hysteresis threshold met (e.g., 3 pings)
-    return deviation_state['consecutive'] >= 3
+    is_confirmed = deviation_state['consecutive'] >= 3
+    return is_deviating, is_confirmed
 

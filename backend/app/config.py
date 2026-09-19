@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID: Optional[str] = None
     TWILIO_AUTH_TOKEN: Optional[str] = None
     TWILIO_FROM_NUMBER: Optional[str] = None
+    PUBLIC_BASE_URL: str = "http://localhost:5173"
     
     FCM_SERVICE_ACCOUNT_JSON_PATH: Optional[str] = None
     
@@ -20,7 +21,7 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: Optional[str] = None
     MINIO_SECRET_KEY: Optional[str] = None
 
-    model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
 

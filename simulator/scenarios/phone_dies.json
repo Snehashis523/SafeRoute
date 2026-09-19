@@ -1,0 +1,7 @@
+[
+  { "type": "ping", "lat": 22.570, "lon": 88.360, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.590, "lon": 88.360, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.591, "lon": 88.360, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.592, "lon": 88.360, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "disconnect" }
+]

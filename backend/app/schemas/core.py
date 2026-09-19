@@ -1,12 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class RoutePlanRequest(BaseModel):
     origin: List[float] # [lon, lat]
     destination: List[float] # [lon, lat]
     mode: str = "walk"
-    depart_at: datetime = Field(default_factory=datetime.utcnow)
+    depart_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class RouteCandidate(BaseModel):
     worst_segment_score: float

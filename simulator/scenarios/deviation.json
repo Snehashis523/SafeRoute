@@ -1,0 +1,10 @@
+[
+  { "type": "ping", "lat": 22.570, "lon": 88.360, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.571, "lon": 88.361, "speed": 1.2, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.590, "lon": 88.360, "speed": 1.5, "accuracy": 15.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.591, "lon": 88.360, "speed": 1.5, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.592, "lon": 88.360, "speed": 1.5, "accuracy": 12.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.593, "lon": 88.360, "speed": 1.5, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.594, "lon": 88.360, "speed": 1.5, "accuracy": 10.0, "delay_sec": 1 },
+  { "type": "ping", "lat": 22.595, "lon": 88.360, "speed": 1.5, "accuracy": 10.0, "delay_sec": 50 }
+]

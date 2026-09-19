@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, Boolean, JSON, DateTime, 
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY
 from geoalchemy2 import Geometry
 from app.models.database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
 
 class EscalationLevel(enum.Enum):
@@ -17,7 +17,7 @@ class User(Base):
     id = Column(String, primary_key=True)
     phone = Column(String, unique=True, index=True)
     name = Column(String)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class TrustedContact(Base):
     __tablename__ = "trusted_contacts"
@@ -40,6 +40,7 @@ class Trip(Base):
     started_at = Column(DateTime)
     eta = Column(DateTime)
     status = Column(String) # 'active', 'completed', 'cancelled'
+    share_token = Column(String, unique=True, index=True, nullable=True)
 
 class GpsPing(Base):
     __tablename__ = "gps_pings"
@@ -75,7 +76,7 @@ class Report(Base):
     rating = Column(String)
     tags = Column(ARRAY(String))
     note = Column(String)
-    ts = Column(DateTime, default=datetime.utcnow)
+    ts = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Incident(Base):
     __tablename__ = "incidents"
@@ -116,6 +117,9 @@ class EscalationState(Base):
     level = Column(String)
     entered_at = Column(DateTime)
     reason = Column(String)
+    # checkin_deadline is reused:
+    # 1. At L2, it's the deadline for the user to check-in OK (Checkin_WINDOW_SEC).
+    # 2. At L3, it's the deadline before it automatically escalates to L4 (ESCALATION_SUSTAINED_SEC).
     checkin_deadline = Column(DateTime, nullable=True)
     last_notified_at = Column(DateTime, nullable=True)
 
@@ -126,7 +130,7 @@ class VoiceEvent(Base):
     kind = Column(String) # 'duress_word' | 'safe_word' | 'checkin_spoken' | 'no_response'
     transcript_hash = Column(String)
     confidence = Column(Float)
-    ts = Column(DateTime, default=datetime.utcnow)
+    ts = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class VoiceConfig(Base):
     __tablename__ = "voice_config"
