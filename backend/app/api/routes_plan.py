@@ -15,13 +15,10 @@ async def plan_route(req: RoutePlanRequest, db: Session = Depends(get_db)):
     # 2. Segment and score candidates
     scored = []
     for r in raw_routes:
-        # Simplification: OSRM route needs to be split into 200m segments here
-        # Assuming OSRM geometry is transformed correctly by score_candidate_route for MVP
-        res = score_candidate_route(db, {"segments": [{"distance": 200}], "duration": r.get("duration", 0)}, req.depart_at, req.mode)
+        res = score_candidate_route(db, r, req.depart_at, req.mode)
         scored.append(res)
         
     # 3. Rank
     ranked = rank_routes(scored)
     
     return ranked
-

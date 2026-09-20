@@ -93,9 +93,11 @@ class SafePoint(Base):
     type = Column(String)
     opening_hours = Column(String)
 
+import uuid
+
 class Alert(Base):
     __tablename__ = "alerts"
-    id = Column(String, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     trip_id = Column(String)
     level = Column(String)
     type = Column(String)

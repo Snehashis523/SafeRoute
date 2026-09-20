@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
+from pathlib import Path
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql://user:password@localhost:5432/saferoute"
@@ -21,6 +22,10 @@ class Settings(BaseSettings):
     MINIO_SECRET_KEY: Optional[str] = None
 
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=str(Path(__file__).resolve().parent.parent.parent / ".env"),
+        extra="ignore"
+    )
 
 settings = Settings()
 
