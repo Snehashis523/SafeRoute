@@ -46,3 +46,4 @@ dashboard/node_modules/
 mobile/node_modules/
 mobile/.expo/
 
+*.txt
