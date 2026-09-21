@@ -51,6 +51,7 @@ function App() {
             <Route path="/compare" element={<RouteCompareScreen />} />
             <Route path="/trip/:id" element={<ActiveTripScreen />} />
             <Route path="/trip/:id/report" element={<ReportScreen />} />
+            <Route path="/report" element={<ReportScreen />} />
             <Route path="/contacts" element={<ContactsScreen />} />
             <Route path="/voice-setup" element={<VoiceSetupScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />

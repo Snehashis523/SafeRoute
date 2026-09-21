@@ -125,10 +125,14 @@ function ActiveTripScreen() {
 
   const endTrip = useCallback(async () => {
     if (!id) return
-    await triggerSOS(id) // This ends the trip on backend
+    try {
+      await triggerSOS(id) // This ends the trip on backend
+    } catch (e) {
+      console.error('End trip error:', e)
+    }
     localStorage.removeItem(`trip_${id}_route`)
     localStorage.removeItem('activeTripId')
-    navigate('/report')
+    navigate('/report', { state: { tripId: id } })
   }, [id, navigate])
 
   return (
@@ -141,7 +145,7 @@ function ActiveTripScreen() {
       )}
       
       <div style={styles.mapContainer}>
-        <MapContainer center={position || [22.57, 88.36]} zoom={15} style={{ height: '100%', width: '100%' }}>
+        <MapContainer center={position || [22.57, 88.36]} zoom={15} style={{ flex: 1, width: '100%', minHeight: '200px' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OSM" />
           
           {routeCoordinates.length > 0 && (
@@ -186,7 +190,7 @@ function ActiveTripScreen() {
 const styles: Record<string, React.CSSProperties> = {
   container: { flex: 1, display: 'flex', flexDirection: 'column' as const, minHeight: 0 },
   banner: { padding: '12px', textAlign: 'center', color: '#fff', fontWeight: 'bold' },
-  mapContainer: { flex: 1, minHeight: 0 },
+  mapContainer: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' as const },
   controls: { padding: '16px', background: '#fff', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column' as const, gap: '12px' },
   demoControls: { display: 'flex', gap: '8px', flexWrap: 'wrap' },
   demoBtn: { padding: '10px 16px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '500' },

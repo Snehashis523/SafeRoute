@@ -31,10 +31,8 @@ function RouteCompareScreen() {
 
   const handleStart = async (route: RouteCandidate) => {
     try {
-      const coordinates = route.segments.map(s => ({
-        latitude: s.mid[1],
-        longitude: s.mid[0],
-      }))
+      // Store as [lat, lon] tuples — Leaflet Polyline expects [lat, lon] pairs
+      const coordinates: [number, number][] = route.segments.map(s => [s.mid[1], s.mid[0]])
       
       const res = await startTrip({
         origin,
@@ -47,7 +45,7 @@ function RouteCompareScreen() {
         planned_segments: route.segments,
       })
       
-      // Store route coordinates for active trip screen
+      // Store route coordinates as [lat, lon] tuples for ActiveTripScreen Polyline
       localStorage.setItem(`trip_${res.trip_id}_route`, JSON.stringify(coordinates))
       localStorage.setItem('activeTripId', res.trip_id)
       

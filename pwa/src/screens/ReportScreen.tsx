@@ -1,18 +1,22 @@
 import { useState, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { sendReport, suggestTags } from '../services/api'
 import type { ReportPayload } from '../types'
 
 function ReportScreen() {
   const navigate = useNavigate()
+  const { id: paramId } = useParams<{ id: string }>()
+  const location = useLocation()
+  const locState = location.state as { tripId?: string } | null
+  // Priority: route param > navigation state > localStorage > demo fallback
+  const tripId = paramId || locState?.tripId || localStorage.getItem('activeTripId') || 'demo-trip-id'
+
   const [rating, setRating] = useState<ReportPayload['rating']>('🟢')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [note, setNote] = useState('')
   const [suggestions, setSuggestions] = useState<{ tag: string; confidence: number }[]>([])
   const [submitting, setSubmitting] = useState(false)
-  
-  // Trip ID would come from navigation state
-  const tripId = 'demo-trip-id'
+
 
   const toggleTag = useCallback((tag: string) => {
     setSelectedTags(prev => prev.includes(tag) 
