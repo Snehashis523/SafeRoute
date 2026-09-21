@@ -7,6 +7,28 @@ import { formatCoords } from '../services/location'
 import { MAP_DEFAULTS } from '../services/config'
 import type { LeafletMouseEvent, Map as LeafletMap } from 'leaflet'
 
+// Kolkata demo presets
+const KOLKATA_PRESETS = [
+  {
+    name: 'Park Street → Victoria Memorial',
+    mode: 'walk' as const,
+    origin: [88.3524, 22.5513] as [number, number],
+    destination: [88.3426, 22.5448] as [number, number],
+  },
+  {
+    name: 'Howrah Station → B.B.D. Bagh',
+    mode: 'walk' as const,
+    origin: [88.3426, 22.5851] as [number, number],
+    destination: [88.3512, 22.5726] as [number, number],
+  },
+  {
+    name: 'Salt Lake Sector V → Esplanade',
+    mode: 'drive' as const,
+    origin: [88.4332, 22.5744] as [number, number],
+    destination: [88.3528, 22.5647] as [number, number],
+  },
+]
+
 function PlanScreen() {
   const navigate = useNavigate()
   const [origin, setOrigin] = useState<[number, number] | null>(null)
@@ -66,6 +88,17 @@ function PlanScreen() {
     }
   }
 
+  const applyPreset = (preset: typeof KOLKATA_PRESETS[0]) => {
+    setOrigin(preset.origin)
+    setDestination(preset.destination)
+    setMode(preset.mode)
+  }
+
+  const clearSelection = () => {
+    setOrigin(null)
+    setDestination(null)
+  }
+
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' as const }}>
       <div style={styles.header}>
@@ -86,13 +119,13 @@ function PlanScreen() {
           
           {origin && (
             <Marker position={[origin[1], origin[0]]}>
-              <div>Origin</div>
+              <div style={styles.markerLabel}>Origin</div>
             </Marker>
           )}
           
           {destination && (
             <Marker position={[destination[1], destination[0]]}>
-              <div>Destination</div>
+              <div style={styles.markerLabel}>Destination</div>
             </Marker>
           )}
         </MapContainer>
@@ -112,28 +145,56 @@ function PlanScreen() {
       </div>
       
       <div style={styles.controls}>
+        <div style={styles.presetsSection}>
+          <h3>Quick Demos (Kolkata)</h3>
+          <div style={styles.presetsGrid}>
+            {KOLKATA_PRESETS.map((preset, i) => (
+              <button
+                key={i}
+                onClick={() => applyPreset(preset)}
+                style={styles.presetBtn}
+                disabled={loading}
+              >
+                <span style={styles.presetIcon}>{preset.mode === 'walk' ? '🚶' : '🚗'}</span>
+                <span>{preset.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        
         <div style={styles.modeRow}>
           <button
             style={{ ...styles.modeBtn, ...(mode === 'walk' ? styles.modeBtnActive : {}) }}
             onClick={() => setMode('walk')}
+            disabled={loading}
           >
             🚶 Walk
           </button>
           <button
             style={{ ...styles.modeBtn, ...(mode === 'drive' ? styles.modeBtnActive : {}) }}
             onClick={() => setMode('drive')}
+            disabled={loading}
           >
             🚗 Drive
           </button>
         </div>
         
-        <button 
-          style={styles.currentLocBtn}
-          onClick={useCurrentLocation}
-          disabled={loading}
-        >
-          📍 Use Current Location
-        </button>
+        <div style={styles.actionRow}>
+          <button 
+            style={styles.currentLocBtn}
+            onClick={useCurrentLocation}
+            disabled={loading}
+          >
+            📍 Use Current Location
+          </button>
+          <button 
+            style={styles.clearBtn}
+            onClick={clearSelection}
+            disabled={loading || (!origin && !destination)}
+          >
+            🗑️ Clear
+          </button>
+        </div>
         
         {error && <div style={styles.error}>{error}</div>}
         
@@ -186,10 +247,43 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: '600',
     color: '#333',
   },
+  markerLabel: {
+    background: '#1976d2',
+    color: '#fff',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: '500',
+  },
   controls: {
     padding: '16px',
     background: '#fff',
     borderTop: '1px solid #eee',
+  },
+  presetsSection: {
+    marginBottom: '16px',
+  },
+  presetsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '8px',
+    marginTop: '8px',
+  },
+  presetBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 12px',
+    background: '#fafafa',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    fontSize: '13px',
+    textAlign: 'left',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  presetIcon: {
+    fontSize: '16px',
   },
   modeRow: {
     display: 'flex',
@@ -210,21 +304,36 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#e3f2fd',
     color: '#1976d2',
   },
-  currentLocBtn: {
-    width: '100%',
-    padding: '12px',
+  actionRow: {
+    display: 'flex',
+    gap: '8px',
     marginBottom: '12px',
+  },
+  currentLocBtn: {
+    flex: 1,
+    padding: '12px',
     background: '#e3f2fd',
     color: '#1976d2',
     border: '1px solid #1976d2',
     borderRadius: '8px',
     fontWeight: '600',
   },
+  clearBtn: {
+    padding: '12px',
+    background: '#f5f5f5',
+    color: '#666',
+    border: '1px solid #ddd',
+    borderRadius: '8px',
+    fontWeight: '500',
+  },
   error: {
     color: '#c62828',
     marginBottom: '12px',
     textAlign: 'center',
     fontSize: '14px',
+    padding: '8px',
+    background: '#fdeaea',
+    borderRadius: '8px',
   },
   submitBtn: {
     width: '100%',

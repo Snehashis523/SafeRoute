@@ -66,6 +66,20 @@ export function useVoice() {
     }
   }
 
+  // Toggle just the enabled state
+  const setVoiceEnabled = async (enabled: boolean) => {
+    if (!config) return
+    try {
+      const newConfig = { ...config, enabled }
+      await setVoiceConfigService(newConfig)
+      setConfigState(newConfig)
+      initVoice(newConfig)
+    } catch (error) {
+      console.error('Failed to set voice enabled:', error)
+      throw error
+    }
+  }
+
   const setHandler = useCallback((handler: (event: { kind: string; confidence: number }) => void) => {
     handlerRef.current = handler
   }, [])
@@ -110,6 +124,7 @@ export function useVoice() {
     listening,
     speaking,
     setConfig: setVoiceConfig,
+    setVoiceEnabled,
     setHandler,
     startListening: start,
     stopListening: stop,

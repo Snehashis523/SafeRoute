@@ -172,6 +172,56 @@ export async function testPhrase(phrase: string, targetHash: string): Promise<{ 
   return { match, confidence: 1.0 }
 }
 
+// Real microphone test using Web Speech API
+export function testMicrophone(targetWord: string): Promise<{ match: boolean; transcript: string; confidence: number }> {
+  return new Promise((resolve) => {
+    const SpeechRecognitionCtor = getSpeechRecognition()
+    if (!SpeechRecognitionCtor) {
+      resolve({ match: false, transcript: '', confidence: 0 })
+      return
+    }
+    
+    const testRecognition = new SpeechRecognitionCtor()
+    testRecognition.lang = 'en-US'
+    testRecognition.continuous = false
+    testRecognition.interimResults = true
+    testRecognition.maxAlternatives = 1
+    
+    let finalTranscript = ''
+    
+    testRecognition.onresult = async (event: SpeechRecognitionEvent) => {
+      let interim = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        const conf = event.results[i][0].confidence ?? 1.0
+        if (event.results[i].isFinal) {
+          finalTranscript = transcript
+        } else {
+          interim += transcript
+        }
+      }
+    }
+    
+    testRecognition.onend = async () => {
+      const normalized = normalizePhrase(finalTranscript)
+      const match = await checkMatch(normalized, await hashPhrase(targetWord))
+      resolve({ match, transcript: finalTranscript, confidence: 1.0 })
+    }
+    
+    testRecognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('Test mic error:', event.error)
+      resolve({ match: false, transcript: '', confidence: 0 })
+    }
+    
+    try {
+      testRecognition.start()
+    } catch (err) {
+      console.error('Test mic start error:', err)
+      resolve({ match: false, transcript: '', confidence: 0 })
+    }
+  })
+}
+
 export async function setVoiceConfigAPI(safeWordHash: string, duressWordHash: string, enabled: boolean): Promise<void> {
   const res = await fetch('/users/voice-config', {
     method: 'POST',

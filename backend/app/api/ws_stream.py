@@ -17,27 +17,40 @@ async def trip_stream(websocket: WebSocket, trip_id: str):
     try:
         while True:
             data = await websocket.receive_json()
-            # Expecting GPS ping data here
-            # data = {"lat": ..., "lon": ..., "speed": ..., "accuracy": ...}
+            msg_type = data.get("type")
+
+            # Handle heartbeat from client
+            if msg_type == "heartbeat":
+                await websocket.send_json({"type": "heartbeat_ack"})
+                continue
+
+            # Extract ping coordinates from polymorphic message formats
+            # Format 1: { "type": "ping", "payload": { "lat": ..., "lon": ..., ... } }
+            # Format 2: { "lat": ..., "lon": ..., "speed": ..., "accuracy": ... } (flat)
+            ping_data = data.get("payload") if msg_type == "ping" else data
             
+            if not isinstance(ping_data, dict) or "lat" not in ping_data or "lon" not in ping_data:
+                await websocket.send_json({"status": "ignored", "reason": "invalid_ping_data"})
+                continue
+
             ts = datetime.utcnow()
             
             # Store in in-process buffer
             ping_buffers[trip_id].append({
                 "ts": ts,
-                **data
+                **ping_data
             })
             
             # Also persist to database
             db = SessionLocal()
             try:
-                point = Point(data["lon"], data["lat"])
+                point = Point(ping_data["lon"], ping_data["lat"])
                 gps_ping = GpsPing(
                     trip_id=trip_id,
                     ts=ts,
                     geom=from_shape(point, srid=4326),
-                    speed=data.get("speed"),
-                    accuracy=data.get("accuracy")
+                    speed=ping_data.get("speed"),
+                    accuracy=ping_data.get("accuracy")
                 )
                 db.add(gps_ping)
                 db.commit()

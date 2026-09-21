@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet'
 import { startTrip } from '../services/api'
@@ -8,12 +8,23 @@ import { RouteCandidate, RouteSegment } from '../types'
 function RouteCompareScreen() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { routes, origin, destination, mode } = location.state as {
+  const mapRef = useRef<HTMLDivElement>(null)
+  
+  // Guard against direct access without state
+  const state = location.state as {
     routes: RouteCandidate[]
     origin: [number, number]
     destination: [number, number]
     mode: string
+  } | null
+  
+  if (!state) {
+    // Redirect to plan if accessed directly without routes
+    navigate('/plan', { replace: true })
+    return null
   }
+  
+  const { routes, origin, destination, mode } = state
   
   const [selectedRoute, setSelectedRoute] = useState<RouteCandidate | null>(null)
   const [showFactors, setShowFactors] = useState<RouteSegment | null>(null)
@@ -36,6 +47,10 @@ function RouteCompareScreen() {
         planned_segments: route.segments,
       })
       
+      // Store route coordinates for active trip screen
+      localStorage.setItem(`trip_${res.trip_id}_route`, JSON.stringify(coordinates))
+      localStorage.setItem('activeTripId', res.trip_id)
+      
       navigate(`/trip/${res.trip_id}`, { 
         state: { routeCoordinates: coordinates } 
       })
@@ -50,6 +65,10 @@ function RouteCompareScreen() {
     return '#c62828'
   }
 
+  // Calculate bounds for auto-fit
+  const allCoords = routes.flatMap(r => r.segments.map(s => [s.mid[1], s.mid[0]]))
+  const bounds = allCoords.length > 0 ? allCoords : [[22.57, 88.36], [22.58, 88.37]]
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -57,8 +76,8 @@ function RouteCompareScreen() {
         <p>{routes.length} option{routes.length > 1 ? 's' : ''} • Mode: {mode}</p>
       </div>
       
-      <div style={styles.mapContainer}>
-        <MapContainer center={[-37.8136, 144.9631]} zoom={13} style={{ height: '40vh', width: '100%' }}>
+      <div style={styles.mapContainer} ref={mapRef}>
+        <MapContainer center={[22.5726, 88.3639]} zoom={13} style={{ height: '40vh', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OSM" />
           
           {routes.map((route, i) => (
@@ -70,6 +89,18 @@ function RouteCompareScreen() {
               opacity={0.8}
             />
           ))}
+          
+          {/* Origin and Destination markers */}
+          {origin && (
+            <Marker position={[origin[1], origin[0]]}>
+              <div style={styles.markerLabel}>Start</div>
+            </Marker>
+          )}
+          {destination && (
+            <Marker position={[destination[1], destination[0]]}>
+              <div style={styles.markerLabel}>End</div>
+            </Marker>
+          )}
         </MapContainer>
       </div>
       
@@ -121,6 +152,14 @@ const styles: Record<string, React.CSSProperties> = {
   segments: { marginBottom: '16px' },
   segment: { display: 'flex', alignItems: 'center', padding: '8px', borderRadius: '8px', background: '#fafafa', marginBottom: '8px', cursor: 'pointer' },
   startBtn: { width: '100%', padding: '14px', background: '#1976d2', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '600', cursor: 'pointer' },
+  markerLabel: {
+    background: '#1976d2',
+    color: '#fff',
+    padding: '4px 8px',
+    borderRadius: '4px',
+    fontSize: '12px',
+    fontWeight: '500',
+  },
 }
 
 export default RouteCompareScreen

@@ -5,11 +5,17 @@ function Header() {
 
   const navItems = [
     { path: '/plan', label: 'Plan', icon: '🗺️' },
+    { path: '/compare', label: 'Compare', icon: '📊' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📋' },
+    { path: '/sos', label: 'SOS', icon: '🚨' },
     { path: '/contacts', label: 'Contacts', icon: '👥' },
     { path: '/voice-setup', label: 'Voice', icon: '🎤' },
     { path: '/settings', label: 'Settings', icon: '⚙️' },
   ]
 
+  // Check if there's an active trip (stored in localStorage)
+  const activeTripId = localStorage.getItem('activeTripId')
+  
   return (
     <header style={styles.header}>
       <div style={styles.brand}>
@@ -30,6 +36,11 @@ function Header() {
             <span>{item.label}</span>
           </NavLink>
         ))}
+        {activeTripId && (
+          <span style={styles.activeTripBadge}>
+            🔴 Live Trip
+          </span>
+        )}
       </nav>
     </header>
   )
@@ -85,6 +96,16 @@ const styles: Record<string, React.CSSProperties> = {
   },
   navIcon: {
     fontSize: '16px',
+  },
+  activeTripBadge: {
+    background: '#c62828',
+    color: '#ffffff',
+    padding: '4px 10px',
+    borderRadius: '9999px',
+    fontSize: '12px',
+    fontWeight: '600',
+    marginLeft: '8px',
+    animation: 'pulse 1.5s infinite',
   },
 }
 

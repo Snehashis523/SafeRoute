@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { getVoiceConfig, setVoiceConfig, testPhrase, isVoiceSupported } from '../services/voice'
+import { useState, useEffect, useRef } from 'react'
+import { getVoiceConfig, setVoiceConfig, testMicrophone, isVoiceSupported } from '../services/voice'
 import type { VoiceConfig } from '../types'
 
 function VoiceSetupScreen() {
@@ -8,10 +8,12 @@ function VoiceSetupScreen() {
   const [enabled, setEnabled] = useState(true)
   const [testingSafe, setTestingSafe] = useState(false)
   const [testingDuress, setTestingDuress] = useState(false)
-  const [testResult, setTestResult] = useState<{ type: 'safe' | 'duress'; match: boolean; confidence: number } | null>(null)
+  const [testResult, setTestResult] = useState<{ type: 'safe' | 'duress'; match: boolean; transcript: string; confidence: number } | null>(null)
   const [hashes, setHashes] = useState<{ safeWordHash: string; duressWordHash: string } | null>(null)
   const [saving, setSaving] = useState(false)
   const [supported, setSupported] = useState(false)
+  const [liveTranscript, setLiveTranscript] = useState('')
+  const transcriptRef = useRef('')
 
   useEffect(() => {
     setSupported(isVoiceSupported())
@@ -61,6 +63,9 @@ function VoiceSetupScreen() {
       
       await setVoiceConfig(newConfig)
       
+      // Also save to localStorage for offline access
+      localStorage.setItem('voiceConfig', JSON.stringify(newConfig))
+      
       setHashes({ safeWordHash: safeHash, duressWordHash: duressHash })
       alert('Voice configuration saved successfully')
     } catch (e) {
@@ -73,13 +78,14 @@ function VoiceSetupScreen() {
   const testSafeWord = async () => {
     setTestingSafe(true)
     setTestResult(null)
+    setLiveTranscript('🎙️ Listening... Speak your safe word now')
     try {
-      const safeHash = await hashPhrase(safeWord)
-      const result = await testPhrase(safeWord, safeHash)
+      const result = await testMicrophone(safeWord)
+      setLiveTranscript(`Heard: "${result.transcript}"`)
       setTestResult({ type: 'safe', ...result })
-      alert(`${result.match ? 'Match!' : 'No Match'} - Confidence: ${Math.round(result.confidence * 100)}%`)
     } catch (e) {
-      alert('Error: ' + (e instanceof Error ? e.message : 'Test failed'))
+      setLiveTranscript('Error occurred')
+      console.error('Test failed:', e)
     } finally {
       setTestingSafe(false)
     }
@@ -88,13 +94,14 @@ function VoiceSetupScreen() {
   const testDuressWord = async () => {
     setTestingDuress(true)
     setTestResult(null)
+    setLiveTranscript('🎙️ Listening... Speak your duress word now')
     try {
-      const duressHash = await hashPhrase(duressWord)
-      const result = await testPhrase(duressWord, duressHash)
+      const result = await testMicrophone(duressWord)
+      setLiveTranscript(`Heard: "${result.transcript}"`)
       setTestResult({ type: 'duress', ...result })
-      alert(`${result.match ? 'Match!' : 'No Match'} - Confidence: ${Math.round(result.confidence * 100)}%`)
     } catch (e) {
-      alert('Error: ' + (e instanceof Error ? e.message : 'Test failed'))
+      setLiveTranscript('Error occurred')
+      console.error('Test failed:', e)
     } finally {
       setTestingDuress(false)
     }
@@ -119,18 +126,24 @@ function VoiceSetupScreen() {
         <h3>Safe Word</h3>
         <p style={styles.helpText}>Say this to cancel an alert. Example: "I'm fine", "All good"</p>
         <input style={styles.input} placeholder="e.g., I'm fine" value={safeWord} onChange={e => setSafeWord(e.target.value)} autoCapitalize="none" />
-        <button style={testingSafe ? styles.testBtnDisabled : styles.testBtn} onClick={testSafeWord} disabled={testingSafe || testingDuress}>
-          {testingSafe ? 'Testing...' : 'Test Safe Word'}
-        </button>
+        <div style={styles.buttonRow}>
+          <button style={testingSafe ? styles.testBtnDisabled : styles.testBtn} onClick={testSafeWord} disabled={testingSafe || testingDuress}>
+            {testingSafe ? '🎙️ Listening...' : '🎙️ Speak to Test Safe Word'}
+          </button>
+        </div>
+        {testingSafe && <p style={styles.liveTranscript}>{liveTranscript}</p>}
       </div>
 
       <div style={styles.section}>
         <h3>Duress Word</h3>
         <p style={styles.helpText}>Say this to trigger silent SOS. Should sound normal but never used casually.<br/>Example: "pineapple", "blueberry", "coffee time"</p>
         <input style={styles.input} placeholder="e.g., pineapple" value={duressWord} onChange={e => setDuressWord(e.target.value)} autoCapitalize="none" />
-        <button style={testingDuress ? styles.testBtnDisabled : (styles.testBtnDuress as React.CSSProperties)} onClick={testDuressWord} disabled={testingSafe || testingDuress}>
-          {testingDuress ? 'Testing...' : 'Test Duress Word'}
-        </button>
+        <div style={styles.buttonRow}>
+          <button style={testingDuress ? styles.testBtnDisabled : styles.testBtnDuress} onClick={testDuressWord} disabled={testingSafe || testingDuress}>
+            {testingDuress ? '🎙️ Listening...' : '🎙️ Speak to Test Duress Word'}
+          </button>
+        </div>
+        {testingDuress && <p style={styles.liveTranscript}>{liveTranscript}</p>}
       </div>
 
       <div style={styles.section}>
@@ -148,7 +161,7 @@ function VoiceSetupScreen() {
         <div style={testResult.match ? styles.resultSuccess : styles.resultError}>
           <h4>{testResult.type === 'safe' ? 'Safe Word' : 'Duress Word'} Test</h4>
           <p style={styles.resultText}>{testResult.match ? '✓ MATCH' : '✗ NO MATCH'}</p>
-          <p style={styles.resultDetail}>Confidence: {Math.round(testResult.confidence * 100)}%</p>
+          <p style={styles.resultDetail}>Heard: "{testResult.transcript}"</p>
         </div>
       )}
 
@@ -174,13 +187,14 @@ const styles: Record<string, React.CSSProperties> = {
   section: { marginBottom: '24px' },
   helpText: { color: '#666', fontSize: '13px', marginBottom: '12px', lineHeight: 1.6 },
   input: { width: '100%', padding: '14px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '16px', marginBottom: '12px', background: '#fafafa' },
-  testBtn: { padding: '12px 24px', borderRadius: '8px', background: '#1976d2', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer' },
-  testBtnDisabled: { padding: '12px 24px', borderRadius: '8px', background: '#1976d2', color: '#fff', fontWeight: '600', border: 'none', cursor: 'not-allowed', opacity: 0.6 },
-  testBtnDuress: { padding: '12px 24px', borderRadius: '8px', background: '#c62828', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer' },
+  buttonRow: { display: 'flex', gap: '12px' },
+  testBtn: { padding: '12px 24px', borderRadius: '8px', background: '#1976d2', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', flex: 1 },
+  testBtnDisabled: { padding: '12px 24px', borderRadius: '8px', background: '#1976d2', color: '#fff', fontWeight: '600', border: 'none', cursor: 'not-allowed', opacity: 0.6, flex: 1 },
+  testBtnDuress: { padding: '12px 24px', borderRadius: '8px', background: '#c62828', color: '#fff', fontWeight: '600', border: 'none', cursor: 'pointer', flex: 1 },
   toggleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' },
-  resultBox: { padding: '16px', borderRadius: '8px', marginTop: '16px' },
-  resultSuccess: { background: '#e8f5e9', border: '1px solid #2e7d32' },
-  resultError: { background: '#fdeaea', border: '1px solid #c62828' },
+  liveTranscript: { marginTop: '8px', padding: '12px', background: '#e3f2fd', borderRadius: '8px', color: '#1565c0', fontSize: '14px', minHeight: '20px' },
+  resultSuccess: { background: '#e8f5e9', border: '1px solid #2e7d32', padding: '16px', borderRadius: '8px', marginTop: '16px' },
+  resultError: { background: '#fdeaea', border: '1px solid #c62828', padding: '16px', borderRadius: '8px', marginTop: '16px' },
   resultText: { fontSize: '20px', fontWeight: 'bold', margin: '8px 0' },
   resultDetail: { fontSize: '14px', color: '#666' },
   hashInfo: { marginTop: '20px', padding: '12px', background: '#f5f5f5', borderRadius: '8px' },

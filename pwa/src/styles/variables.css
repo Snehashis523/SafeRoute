@@ -85,16 +85,13 @@
   --bp-xl: 1280px;
 }
 
-/* Dark mode support (optional) */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-white: #121212;
-    --color-gray-50: #1e1e1e;
-    --color-gray-100: #2c2c2c;
-    --color-gray-200: #3a3a3a;
-    --color-gray-300: #4a4a4a;
-    --text-primary: #e0e0e0;
-    --text-secondary: #b0b0b0;
-    --text-muted: #888888;
-  }
+/* Leaflet marker icon fixes for Vite bundler */
+.leaflet-default-icon-path {
+  background-image: url('leaflet/dist/images/marker-icon.png');
+}
+.leaflet-retina-icon-path {
+  background-image: url('leaflet/dist/images/marker-icon-2x.png');
+}
+.leaflet-shadow-path {
+  background-image: url('leaflet/dist/images/marker-shadow.png');
 }

@@ -50,7 +50,7 @@ export default defineConfig({
                     {
                         urlPattern: function (_a) {
                             var url = _a.url;
-                            return url.pathname.startsWith('/api/') || url.pathname.startsWith('/routes/') || url.pathname.startsWith('/trips/') || url.pathname.startsWith('/contacts/') || url.pathname.startsWith('/reports/') || url.pathname.startsWith('/users/');
+                            return url.pathname.startsWith('/api/') || url.pathname.startsWith('/routes/') || url.pathname.startsWith('/trips/') || url.pathname.startsWith('/contacts/') || url.pathname.startsWith('/reports/') || url.pathname.startsWith('/users/') || url.pathname.startsWith('/share/');
                         },
                         handler: 'NetworkFirst',
                         options: {
@@ -74,6 +74,7 @@ export default defineConfig({
             '/reports': { target: 'http://localhost:8000', changeOrigin: true },
             '/users': { target: 'http://localhost:8000', changeOrigin: true },
             '/safe-points': { target: 'http://localhost:8000', changeOrigin: true },
+            '/share': { target: 'http://localhost:8000', changeOrigin: true },
             '/ws': { target: 'ws://localhost:8000', ws: true }
         }
     }

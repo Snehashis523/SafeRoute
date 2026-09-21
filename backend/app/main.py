@@ -22,10 +22,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SafeRoute+ Backend", lifespan=lifespan)
 
-# CORS for local dev (Vite on 5175, Expo web on 8081, etc.)
+# CORS for local dev (Vite on 5173, 5174, 5175, Expo web on 8081, etc.)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:8081", "http://127.0.0.1:8081"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,6 +51,10 @@ app.include_router(ws_stream.router)
 app.include_router(contacts.router)
 app.include_router(reports.router)
 app.include_router(tags.router)
+
+# Top-level alias route for live-share
+from app.api.trips import get_share_trip
+app.add_api_route("/share/{token}", get_share_trip, methods=["GET"], tags=["LiveShare"])
 
 @app.get("/health")
 async def health_check():
@@ -142,4 +156,3 @@ async def run_aggregator_endpoint():
     from app.workers.aggregator import run_aggregator
     run_aggregator()
     return {"status": "aggregator executed"}
-

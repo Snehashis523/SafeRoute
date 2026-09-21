@@ -47,13 +47,27 @@ async function fetchApi<T>(
     clearTimeout(timeoutId)
 
     if (!res.ok) {
-      let detail: unknown
+      const rawText = await res.text()
+      let errorDetail: any
       try {
-        detail = await res.json()
+        errorDetail = JSON.parse(rawText)
       } catch {
-        detail = await res.text()
+        errorDetail = rawText
       }
-      throw new ApiError(res.status, detail as string ?? `HTTP ${res.status}`, detail)
+
+      let errorMessage = `HTTP ${res.status}`
+      if (typeof errorDetail === 'string') {
+        errorMessage = errorDetail
+      } else if (errorDetail && typeof errorDetail === 'object') {
+        if (typeof errorDetail.detail === 'string') {
+          errorMessage = errorDetail.detail
+        } else if (Array.isArray(errorDetail.detail)) {
+          errorMessage = errorDetail.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ')
+        } else {
+          errorMessage = JSON.stringify(errorDetail)
+        }
+      }
+      throw new ApiError(res.status, errorMessage, errorDetail)
     }
 
     if (res.status === 204) return undefined as T

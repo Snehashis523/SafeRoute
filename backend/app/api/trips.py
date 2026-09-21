@@ -18,12 +18,19 @@ async def start_trip(req: TripStartRequest, db: Session = Depends(get_db), user_
     origin_pt = Point(req.origin[0], req.origin[1])
     dest_pt = Point(req.destination[0], req.destination[1])
     
+    # Convert planned route geometry from request
+    route_line = None
+    if req.planned_route_geom and req.planned_route_geom.get("coordinates"):
+        coords = req.planned_route_geom["coordinates"]
+        route_line = LineString(coords)
+    
     trip = Trip(
         id=trip_id,
         user_id=user_id,
         origin_geom=from_shape(origin_pt, srid=4326),
         dest_geom=from_shape(dest_pt, srid=4326),
         mode=req.mode,
+        planned_route_geom=from_shape(route_line, srid=4326) if route_line else None,
         planned_segments=req.planned_segments,
         started_at=datetime.utcnow(),
         status="active"
@@ -76,11 +83,21 @@ async def get_share_trip(token: str, db: Session = Depends(get_db)):
         line = to_shape(trip.planned_route_geom)
         route_geom = mapping(line)
     
+    # Convert origin and destination geometries to proper lat/lon
+    origin = [0.0, 0.0]
+    destination = [0.0, 0.0]
+    if trip.origin_geom:
+        origin_pt = to_shape(trip.origin_geom)
+        origin = [origin_pt.y, origin_pt.x]
+    if trip.dest_geom:
+        dest_pt = to_shape(trip.dest_geom)
+        destination = [dest_pt.y, dest_pt.x]
+    
     return {
         "id": trip.id,
         "status": trip.status,
-        "origin": [trip.origin_geom.y if hasattr(trip.origin_geom, 'y') else 0, trip.origin_geom.x if hasattr(trip.origin_geom, 'x') else 0],
-        "destination": [trip.dest_geom.y if hasattr(trip.dest_geom, 'y') else 0, trip.dest_geom.x if hasattr(trip.dest_geom, 'x') else 0],
+        "origin": origin,
+        "destination": destination,
         "planned_route_geom": route_geom,
         "position": position,
         "mode": trip.mode,

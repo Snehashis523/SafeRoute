@@ -10,6 +10,17 @@ from datetime import datetime
 
 router = APIRouter(tags=["Voice"])
 
+@router.get("/users/voice-config")
+async def get_voice_config(db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
+    config = db.query(VoiceConfig).filter(VoiceConfig.user_id == user_id).first()
+    if not config:
+        return {"safe_word_hash": "", "duress_word_hash": "", "enabled": True}
+    return {
+        "safe_word_hash": config.safe_word_hash,
+        "duress_word_hash": config.duress_word_hash,
+        "enabled": config.enabled
+    }
+
 @router.post("/users/voice-config")
 async def set_voice_config(req: VoiceConfigRequest, db: Session = Depends(get_db), user_id: str = Depends(get_current_user)):
     config = db.query(VoiceConfig).filter(VoiceConfig.user_id == user_id).first()
@@ -53,4 +64,3 @@ async def submit_voice_event(trip_id: str, req: VoiceEventRequest, db: Session =
     db.commit()
     
     return {"action": action}
-
