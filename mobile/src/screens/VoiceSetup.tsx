@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, Alert, Switch, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, Switch, TextInput, TouchableOpacity } from 'react-native';
 import { VoiceHashes, testPhrase, getConfig, setVoiceConfig } from '../services/voice';
 
 export default function VoiceSetup({ navigation }: any) {
@@ -117,12 +117,14 @@ export default function VoiceSetup({ navigation }: any) {
           onChangeText={setSafeWord}
           autoCapitalize="none"
         />
-        <Button
-          title={testingSafe ? 'Testing...' : 'Test Safe Word'}
+        <TouchableOpacity
+          style={[styles.testBtn, testingSafe && styles.testBtnDisabled]}
           onPress={testSafeWord}
           disabled={testingSafe || testingDuress}
-          color="#1976d2"
-        />
+          activeOpacity={0.7}
+        >
+          <Text style={styles.testBtnText}>{testingSafe ? 'Testing...' : 'Test Safe Word'}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
@@ -138,12 +140,14 @@ export default function VoiceSetup({ navigation }: any) {
           onChangeText={setDuressWord}
           autoCapitalize="none"
         />
-        <Button
-          title={testingDuress ? 'Testing...' : 'Test Duress Word'}
+        <TouchableOpacity
+          style={[styles.testBtn, testingDuress && styles.testBtnDisabled, styles.testBtnDuress]}
           onPress={testDuressWord}
           disabled={testingSafe || testingDuress}
-          color="#c62828"
-        />
+          activeOpacity={0.7}
+        >
+          <Text style={styles.testBtnText}>{testingDuress ? 'Testing...' : 'Test Duress Word'}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.section}>
@@ -184,12 +188,16 @@ export default function VoiceSetup({ navigation }: any) {
         </View>
       )}
 
-      <Button
-        title={saving ? 'Saving...' : 'Save Configuration'}
+      <View style={styles.saveContainer}>
+      <TouchableOpacity
+        style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
         onPress={saveConfig}
         disabled={saving}
-        color="#2e7d32"
-      />
+        activeOpacity={0.7}
+      >
+        <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Configuration'}</Text>
+      </TouchableOpacity>
+    </View>
     </View>
   );
 }
@@ -204,6 +212,14 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, fontSize: 16, marginBottom: 12, backgroundColor: '#fafafa' },
   toggleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   toggleLabel: { fontSize: 16, fontWeight: '600' },
+  testBtn: { paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 8, backgroundColor: '#1976d2' },
+  testBtnDisabled: { opacity: 0.6 },
+  testBtnDuress: { backgroundColor: '#c62828' },
+  testBtnText: { color: 'white', fontWeight: '600', fontSize: 16 },
+  saveContainer: { marginTop: 16 },
+  saveBtn: { backgroundColor: '#2e7d32', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  saveBtnDisabled: { backgroundColor: '#a5d6a7' },
+  saveBtnText: { color: 'white', fontWeight: '600', fontSize: 16 },
   resultBox: { padding: 16, borderRadius: 8, marginTop: 16 },
   resultSuccess: { backgroundColor: '#e8f5e9', borderWidth: 1, borderColor: '#2e7d32' },
   resultError: { backgroundColor: '#fdeaea', borderWidth: 1, borderColor: '#c62828' },

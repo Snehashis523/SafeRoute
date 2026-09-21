@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.state import rehydrate_state_from_db, ping_buffers, trip_runtimes
@@ -21,7 +22,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="SafeRoute+ Backend", lifespan=lifespan)
 
-from app.api import routes_plan, trips, sos, voice, ws_stream, contacts, reports
+# CORS for local dev (Vite on 5175, Expo web on 8081, etc.)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:8081", "http://127.0.0.1:8081"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from app.api import routes_plan, trips, sos, voice, ws_stream, contacts, reports, tags
 
 app.include_router(routes_plan.router)
 app.include_router(trips.router)
@@ -30,6 +40,7 @@ app.include_router(voice.router)
 app.include_router(ws_stream.router)
 app.include_router(contacts.router)
 app.include_router(reports.router)
+app.include_router(tags.router)
 
 @app.get("/health")
 async def health_check():
@@ -124,4 +135,11 @@ async def run_monitor():
     """Manually trigger the monitor for debugging."""
     check_active_trips()
     return {"status": "monitor executed"}
+
+@app.post("/debug/run-aggregator")
+async def run_aggregator_endpoint():
+    """Manually trigger the aggregator for debugging."""
+    from app.workers.aggregator import run_aggregator
+    run_aggregator()
+    return {"status": "aggregator executed"}
 

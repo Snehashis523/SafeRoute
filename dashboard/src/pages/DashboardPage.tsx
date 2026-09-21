@@ -140,7 +140,7 @@ export default function DashboardPage() {
                     </td>
                     <td style={cellStyle}>{alert.type}</td>
                     <td style={cellStyle}>
-                      {alert.payload?.contacts_notified?.length > 0 ? (
+                      {alert.payload?.contacts_notified?.length ? (
                         <span style={{ fontFamily: 'monospace', fontSize: '11px' }}>
                           {alert.payload.contacts_notified.join(', ')}
                         </span>

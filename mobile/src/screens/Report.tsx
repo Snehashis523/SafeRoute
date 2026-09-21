@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { sendReport, ReportPayload } from '../services/api';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { sendReport, ReportPayload, suggestTags } from '../services/api';
 
 const RATINGS = ['🟢', '🟡', '🔴'] as const;
 const RATING_LABELS = {
@@ -21,12 +21,46 @@ export default function Report({ route, navigation }: any) {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ tag: string; confidence: number }[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
   const toggleTag = (tag: string) => {
     setSelectedTags(prev => prev.includes(tag) 
       ? prev.filter(t => t !== tag) 
       : [...prev, tag]);
   };
+
+  const handleSuggestionSelect = (tag: string) => {
+    if (!selectedTags.includes(tag)) {
+      setSelectedTags(prev => [...prev, tag]);
+    }
+    setSuggestions(s => s.filter(s => s.tag !== tag));
+  };
+
+  const debouncedFetch = useMemo(
+    () => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+      return (text: string) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(async () => {
+          if (text.length < 3) {
+            setSuggestions([]);
+            return;
+          }
+          setSuggestionsLoading(true);
+          try {
+            const res = await suggestTags(text);
+            setSuggestions(res.tags.map((t: string, i: number) => ({ tag: t, confidence: res.confidence[i] })));
+          } catch (e) {
+            console.error('Tag suggestion error:', e);
+          } finally {
+            setSuggestionsLoading(false);
+          }
+        }, 300);
+      };
+    },
+    []
+  );
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -106,17 +140,45 @@ export default function Report({ route, navigation }: any) {
           numberOfLines={4}
           placeholder="Any details you'd like to share..."
           value={note}
-          onChangeText={setNote}
+          onChangeText={(t) => { setNote(t); debouncedFetch(t); }}
         />
+        {suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            <Text style={styles.suggestionsLabel}>Suggested tags:</Text>
+            <View style={styles.suggestionsChips}>
+              {suggestions.map(({ tag, confidence }) => (
+                <TouchableOpacity
+                  key={tag}
+                  style={styles.suggestionChip}
+                  onPress={() => handleSuggestionSelect(tag)}
+                >
+                  <Text style={styles.suggestionChipText}>{tag}</Text>
+                  <Text style={styles.suggestionConfidence}>
+                    {Math.round(confidence * 100)}%
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+        {suggestionsLoading && (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading suggestions...</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.submitContainer}>
-        <Button
-          title={submitting ? 'Submitting...' : 'Submit Report'}
+        <TouchableOpacity
+          style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
           onPress={handleSubmit}
           disabled={submitting}
-          color="#1976d2"
-        />
+          activeOpacity={0.7}
+        >
+          <Text style={styles.submitBtnText}>
+            {submitting ? 'Submitting...' : 'Submit Report'}
+          </Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -165,4 +227,28 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   submitContainer: { marginTop: 16 },
-  });
+  submitBtn: {
+    backgroundColor: '#1976d2',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  submitBtnDisabled: { backgroundColor: '#90caf9' },
+  submitBtnText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  suggestionsContainer: { marginTop: 12 },
+  suggestionsLabel: { fontSize: 13, color: '#666', marginBottom: 8 },
+  suggestionsChips: { flexWrap: 'wrap', flexDirection: 'row', gap: 6 },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e3f2fd',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  suggestionChipText: { fontSize: 13, color: '#1976d2', fontWeight: '500' },
+  suggestionConfidence: { fontSize: 11, color: '#1976d2', marginLeft: 6 },
+  loadingContainer: { paddingVertical: 8, alignItems: 'center' },
+  loadingText: { fontSize: 12, color: '#888' },
+});

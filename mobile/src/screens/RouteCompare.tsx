@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, FlatList, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, FlatList } from 'react-native';
 import { startTrip, RouteCandidate, RouteSegment } from '../services/api';
 
 type RouteCompareParams = {
@@ -119,11 +119,9 @@ export default function RouteCompare({ route, navigation }: any) {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
       
-      <Button
-        title="Start This Route"
-        onPress={() => handleStart(item)}
-        color="#1976d2"
-      />
+      <TouchableOpacity style={styles.startBtn} onPress={() => handleStart(item)} activeOpacity={0.7}>
+        <Text style={styles.startBtnText}>Start This Route</Text>
+      </TouchableOpacity>
     </View>
   );
 
@@ -194,4 +192,6 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: 'bold' },
   closeBtn: { fontSize: 24, color: '#666' },
   factorNote: { fontSize: 12, color: '#888', marginTop: 12, textAlign: 'center', fontStyle: 'italic' },
+  startBtn: { backgroundColor: '#1976d2', paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 12 },
+  startBtnText: { color: 'white', fontWeight: '600', fontSize: 16 },
 });

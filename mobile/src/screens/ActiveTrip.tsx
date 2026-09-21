@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Button, StyleSheet, SafeAreaView, Modal, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, Modal, TouchableOpacity, Platform } from 'react-native';
 import MapView, { Marker, Polyline, Callout } from 'react-native-maps';
 import { TripWebSocket } from '../services/ws';
 import { getEscalation, sendCheckin } from '../services/api';
@@ -254,11 +254,15 @@ export default function ActiveTrip({ route, navigation }: any) {
 
       {/* Bottom Actions */}
       <View style={styles.footer}>
-        <Button
-          title={level === 'L3_Alert' && triggerSource === 'voice_duress' ? 'SOS (Silent)' : 'SOS'}
-          color="#d32f2f"
+        <TouchableOpacity
+          style={[styles.sosBtn, level === 'L3_Alert' && triggerSource === 'voice_duress' && styles.sosBtnSilent]}
           onPress={handleSOS}
-        />
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sosBtnText}>
+            {level === 'L3_Alert' && triggerSource === 'voice_duress' ? 'SOS (Silent)' : 'SOS'}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Check-in Modal */}
@@ -296,10 +300,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
   banner: { padding: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(0,0,0,0.1)' },
   bannerText: { fontWeight: 'bold', color: 'white', fontSize: 16 },
-  mapContainer: { flex: 1 },
+mapContainer: { flex: 1 },
   map: { ...StyleSheet.absoluteFill },
   footer: { padding: 16, paddingBottom: 32, backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#eee' },
-  sosButton: { backgroundColor: '#d32f2f', paddingVertical: 14, borderRadius: 8 },
+  sosBtn: { backgroundColor: '#d32f2f', paddingVertical: 14, borderRadius: 8, alignItems: 'center' },
+  sosBtnSilent: { backgroundColor: '#f57f17' },
+  sosBtnText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
   checkinOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   checkinModal: { backgroundColor: 'white', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 },
   checkinTitle: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 8, color: '#c62828' },

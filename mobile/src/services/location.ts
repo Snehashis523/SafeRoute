@@ -9,7 +9,6 @@ export interface GPSPoint {
 }
 
 let watchId: Location.LocationSubscription | null = null;
-let watchPromise: Promise<Location.LocationSubscription> | null = null;
 let listeners: ((point: GPSPoint) => void)[] = [];
 
 export async function requestLocationPermission(): Promise<boolean> {
@@ -36,7 +35,7 @@ export function startLocationUpdates(
   
   if (watchId) return; // Already watching
   
-  watchPromise = Location.watchPositionAsync(
+  Location.watchPositionAsync(
     {
       accuracy,
       timeInterval: interval,
@@ -55,9 +54,7 @@ export function startLocationUpdates(
       
       listeners.forEach((cb) => cb(point));
     }
-  );
-  
-  watchPromise.then(subscription => {
+  ).then(subscription => {
     watchId = subscription;
   });
 }
@@ -72,7 +69,6 @@ export function stopLocationUpdates(onUpdate?: (point: GPSPoint) => void) {
   if (listeners.length === 0 && watchId) {
     watchId.remove();
     watchId = null;
-    watchPromise = null;
   }
 }
 

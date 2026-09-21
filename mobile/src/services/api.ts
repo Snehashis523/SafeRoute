@@ -135,3 +135,15 @@ export const setVoiceConfig = async (safeWordHash: string, duressWordHash: strin
 export const getShareToken = async (tripId: string): Promise<{ token: string }> => {
   return fetchApi<{ token: string }>(`/trips/${tripId}/share`);
 };
+
+export interface SuggestTagsResponse {
+  tags: string[];
+  confidence: number[];
+}
+
+export const suggestTags = async (note: string): Promise<SuggestTagsResponse> => {
+  return fetchApi<SuggestTagsResponse>('/reports/suggest-tags', {
+    method: 'POST',
+    body: JSON.stringify({ note }),
+  });
+};

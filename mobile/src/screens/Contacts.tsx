@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, Alert, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Alert, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { BASE_URL } from '../services/config';
 
 type Contact = {
@@ -113,7 +113,9 @@ export default function Contacts({ route, navigation }: any) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Trusted Contacts</Text>
-        <Button title="+ Add" onPress={() => openAddModal()} color="#1976d2" />
+        <TouchableOpacity style={styles.addBtn} onPress={() => openAddModal()} activeOpacity={0.7}>
+          <Text style={styles.addBtnText}>+ Add</Text>
+        </TouchableOpacity>
       </View>
 
       {loading ? (
@@ -122,7 +124,9 @@ export default function Contacts({ route, navigation }: any) {
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No contacts yet</Text>
           <Text style={styles.emptySubtext}>Add at least one primary contact for emergency alerts</Text>
-          <Button title="Add First Contact" onPress={() => openAddModal()} color="#1976d2" />
+          <TouchableOpacity style={styles.emptyBtn} onPress={() => openAddModal()} activeOpacity={0.7}>
+            <Text style={styles.emptyBtnText}>Add First Contact</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -189,11 +193,13 @@ export default function Contacts({ route, navigation }: any) {
                 keyboardType="numeric"
               />
             </View>
-            <Button
-              title={editingContact ? 'Save Changes' : 'Add Contact'}
+            <TouchableOpacity
+              style={styles.saveBtn}
               onPress={saveContact}
-              color="#1976d2"
-            />
+              activeOpacity={0.7}
+            >
+              <Text style={styles.saveBtnText}>{editingContact ? 'Save Changes' : 'Add Contact'}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -205,7 +211,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' },
   title: { fontSize: 20, fontWeight: 'bold' },
-  addBtn: { backgroundColor: '#1976d2' },
+  addBtn: { backgroundColor: '#1976d2', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  addBtnText: { color: 'white', fontWeight: '600' },
   list: { padding: 16 },
   contactCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, backgroundColor: '#fafafa', borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: '#eee' },
   contactInfo: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -220,6 +227,8 @@ const styles = StyleSheet.create({
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   emptyText: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
   emptySubtext: { color: '#666', textAlign: 'center', marginBottom: 16 },
+  emptyBtn: { backgroundColor: '#1976d2', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 8, marginTop: 8 },
+  emptyBtnText: { color: 'white', fontWeight: '600', fontSize: 16 },
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: 'white', borderRadius: 16, padding: 20, width: '100%', maxWidth: 400, maxHeight: '80%' },
@@ -235,4 +244,6 @@ const styles = StyleSheet.create({
   tierBtnText: { fontSize: 14, color: '#444' },
   tierBtnTextSelected: { color: '#1976d2', fontWeight: 'bold' },
   priorityInput: { marginBottom: 16 },
+  saveBtn: { backgroundColor: '#1976d2', paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  saveBtnText: { color: 'white', fontWeight: '600', fontSize: 16 },
 });
